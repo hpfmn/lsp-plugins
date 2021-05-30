@@ -21,7 +21,7 @@
 
 #include <core/pseudorandom/mls.h>
 
-#define MAX_N_MAX_BITS 64
+#define MAX_SUPPORTED_BITS 64
 
 namespace lsp
 {
@@ -109,6 +109,7 @@ namespace lsp
                 nTapsMask = shift_me | (shift_me << 3) | (shift_me << 4) | (shift_me << 7);
                 return;
             case 13:
+            case 24:
             case 45:
             case 64:
                 nTapsMask = shift_me | (shift_me << 1) | (shift_me << 3) | (shift_me << 4);
@@ -116,7 +117,7 @@ namespace lsp
             case 14:
                 nTapsMask = shift_me | (shift_me << 1) | (shift_me << 11) | (shift_me << 12);
                 return;
-            case 15:
+            case 16:
                 nTapsMask = shift_me | (shift_me << 2) | (shift_me << 3) | (shift_me << 5);
                 return;
             case 18:
@@ -127,7 +128,6 @@ namespace lsp
             case 47:
                 nTapsMask = shift_me | (shift_me << 5);
                 return;
-            case 24:
             case 26:
             case 27:
                 nTapsMask = shift_me | (shift_me << 1) | (shift_me << 7) | (shift_me << 8);
@@ -191,7 +191,7 @@ namespace lsp
 
     void MLS::update_settings()
     {
-        nMaxBits = lsp_min(nMaxBits, MAX_N_MAX_BITS);
+        nMaxBits = lsp_min(nMaxBits, MAX_SUPPORTED_BITS);
 
         nBits = lsp_max(nBits, 1);
         nBits = lsp_min(nBits, nMaxBits);
@@ -213,15 +213,29 @@ namespace lsp
         bSync = false;
     }
 
-    MLS::mls_t xor_gate(MLS::mls_t value)
+    MLS::mls_t MLS::xor_gate(mls_t value)
     {
-        MLS::mls_t nXorValue;
+        mls_t nXorValue;
         for (nXorValue = 0; value; nXorValue ^= 1)
         {
             value &= value - 1;
         }
 
         return nXorValue;
+    }
+
+    MLS::mls_t MLS::get_period()
+    {
+        if (nBits == nMaxBits)
+        {
+            return -1;
+        }
+        else
+        {
+            mls_t period = 1;
+            return (period << nBits) - 1;
+        }
+
     }
 
     MLS::mls_t MLS::progress()

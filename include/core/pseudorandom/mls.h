@@ -29,7 +29,7 @@ namespace lsp
 
     class MLS
     {
-        protected:
+        public:
             typedef uint64_t mls_t;
 
         private:
@@ -95,6 +95,13 @@ namespace lsp
                 nState = targetstate;
                 bSync = true;
             }
+
+            /** Get the sequence period
+             *
+             * @return sequence period
+             */
+            mls_t get_period();
+
 
             /** Get a sample from the MLS generator.
              *
