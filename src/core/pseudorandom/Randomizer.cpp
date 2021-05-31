@@ -19,7 +19,7 @@
  * along with lsp-plugins. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <core/util/Randomizer.h>
+#include <core/pseudorandom/Randomizer.h>
 #include <time.h>
 #include <math.h>
 

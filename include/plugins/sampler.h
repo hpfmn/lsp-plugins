@@ -31,8 +31,8 @@
 #include <core/util/Bypass.h>
 #include <core/util/Toggle.h>
 #include <core/util/Blink.h>
-#include <core/util/Randomizer.h>
 #include <core/files/AudioFile.h>
+#include <core/pseudorandom/Randomizer.h>
 #include <core/sampling/SamplePlayer.h>
 
 

@@ -24,9 +24,9 @@
 
 #include <core/types.h>
 #include <core/alloc.h>
+#include <core/pseudorandom/Randomizer.h>
 #include <data/cvector.h>
 
-#include <core/util/Randomizer.h>
 
 using namespace lsp;
 

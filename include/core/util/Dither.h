@@ -24,7 +24,7 @@
 
 #include <core/types.h>
 #include <core/IStateDumper.h>
-#include <core/util/Randomizer.h>
+#include <core/pseudorandom/Randomizer.h>
 
 namespace lsp
 {
