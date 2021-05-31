@@ -32,7 +32,8 @@ namespace lsp
         RND_LINEAR,
         RND_EXP,
         RND_TRIANGLE,
-        RND_GAUSSIAN
+        RND_GAUSSIAN,
+        RND_MAX
     };
 
     class Randomizer
