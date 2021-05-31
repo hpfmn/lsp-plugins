@@ -23,6 +23,13 @@
 
 #define MAX_SUPPORTED_BITS 64
 
+/** Basic MLS Theory at:
+ *
+ * http://www.kempacoustics.com/thesis/node83.html
+ * https://dspguru.com/dsp/tutorials/a-little-mls-tutorial/
+ * http://in.ncu.edu.tw/ncume_ee/digilogi/prbs.htm
+ */
+
 namespace lsp
 {
     MLS::MLS()
@@ -213,6 +220,7 @@ namespace lsp
         bSync = false;
     }
 
+    // Compute the xor of all the bits in value
     MLS::mls_t MLS::xor_gate(mls_t value)
     {
         mls_t nXorValue;

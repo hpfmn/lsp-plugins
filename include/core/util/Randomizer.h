@@ -31,7 +31,8 @@ namespace lsp
     {
         RND_LINEAR,
         RND_EXP,
-        RND_TRIANGLE
+        RND_TRIANGLE,
+        RND_GAUSSIAN
     };
 
     class Randomizer
@@ -59,6 +60,9 @@ namespace lsp
             explicit Randomizer();
 
             void construct();
+
+        protected:
+            float generate_linear();
 
         public:
             /** Initialize random generator
