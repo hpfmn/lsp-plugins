@@ -23,13 +23,6 @@
 
 #define MAX_SUPPORTED_BITS 64
 
-/** Basic MLS Theory at:
- *
- * http://www.kempacoustics.com/thesis/node83.html
- * https://dspguru.com/dsp/tutorials/a-little-mls-tutorial/
- * http://in.ncu.edu.tw/ncume_ee/digilogi/prbs.htm
- */
-
 namespace lsp
 {
     MLS::MLS()
@@ -44,6 +37,10 @@ namespace lsp
 
     void MLS::construct()
     {
+        vTapsMaskTable  = NULL;
+        construct_taps_mask_table();
+
+
         nMaxBits        = sizeof(mls_t) * 8;
         nBits           = sizeof(mls_t) * 8;
         nFeedbackBit    = 0;
@@ -53,163 +50,144 @@ namespace lsp
         nOutputMask     = 1;
         nState          = 0;
 
+        fAmplitude      = 1.0f;
+
         bSync           = true;
     }
 
-    void MLS::destroy()
+    void MLS::construct_taps_mask_table()
     {
-    }
+        vTapsMaskTable = new mls_t[MAX_SUPPORTED_BITS];
 
-    void MLS::assign_taps_mask()
-    {
         /** From the table "Exponent of Terms of Primitive Binary Polynomials"
          *  in Primitive Binary Polynomials by Wayne Stahnke,
          *  Mathematics of Computation, Volume 27, Number 124, October 1973
          *  link: https://www.ams.org/journals/mcom/1973-27-124/S0025-5718-1973-0327722-7/S0025-5718-1973-0327722-7.pdf
          */
 
-        mls_t shift_me = 1;
+        #if ARCH_32_BIT
+        vTapsMaskTable[0]   = 1u;
+        vTapsMaskTable[1]   = 3u;
+        vTapsMaskTable[2]   = 3u;
+        vTapsMaskTable[3]   = 3u;
+        vTapsMaskTable[4]   = 5u;
+        vTapsMaskTable[5]   = 3u;
+        vTapsMaskTable[6]   = 3u;
+        vTapsMaskTable[7]   = 99u;
+        vTapsMaskTable[8]   = 17u;
+        vTapsMaskTable[9]   = 9u;
+        vTapsMaskTable[10]  = 5u;
+        vTapsMaskTable[11]  = 153u;
+        vTapsMaskTable[12]  = 27u;
+        vTapsMaskTable[13]  = 6147u;
+        vTapsMaskTable[14]  = 3u;
+        vTapsMaskTable[15]  = 45u;
+        vTapsMaskTable[16]  = 9u;
+        vTapsMaskTable[17]  = 129u;
+        vTapsMaskTable[18]  = 99u;
+        vTapsMaskTable[19]  = 9u;
+        vTapsMaskTable[20]  = 5u;
+        vTapsMaskTable[21]  = 3u;
+        vTapsMaskTable[22]  = 33u;
+        vTapsMaskTable[23]  = 27u;
+        vTapsMaskTable[24]  = 9u;
+        vTapsMaskTable[25]  = 387u;
+        vTapsMaskTable[26]  = 387u;
+        vTapsMaskTable[27]  = 9u;
+        vTapsMaskTable[28]  = 5u;
+        vTapsMaskTable[29]  = 98307u;
+        vTapsMaskTable[30]  = 9u;
+        vTapsMaskTable[31]  = 402653187u;
+        #else
+        vTapsMaskTable[0]   = 1u;
+        vTapsMaskTable[1]   = 3u;
+        vTapsMaskTable[2]   = 3u;
+        vTapsMaskTable[3]   = 3u;
+        vTapsMaskTable[4]   = 5u;
+        vTapsMaskTable[5]   = 3u;
+        vTapsMaskTable[6]   = 3u;
+        vTapsMaskTable[7]   = 99u;
+        vTapsMaskTable[8]   = 17u;
+        vTapsMaskTable[9]   = 9u;
+        vTapsMaskTable[10]  = 5u;
+        vTapsMaskTable[11]  = 153u;
+        vTapsMaskTable[12]  = 27u;
+        vTapsMaskTable[13]  = 6147u;
+        vTapsMaskTable[14]  = 3u;
+        vTapsMaskTable[15]  = 45u;
+        vTapsMaskTable[16]  = 9u;
+        vTapsMaskTable[17]  = 129u;
+        vTapsMaskTable[18]  = 99u;
+        vTapsMaskTable[19]  = 9u;
+        vTapsMaskTable[20]  = 5u;
+        vTapsMaskTable[21]  = 3u;
+        vTapsMaskTable[22]  = 33u;
+        vTapsMaskTable[23]  = 27u;
+        vTapsMaskTable[24]  = 9u;
+        vTapsMaskTable[25]  = 387u;
+        vTapsMaskTable[26]  = 387u;
+        vTapsMaskTable[27]  = 9u;
+        vTapsMaskTable[28]  = 5u;
+        vTapsMaskTable[29]  = 98307u;
+        vTapsMaskTable[30]  = 9u;
+        vTapsMaskTable[31]  = 402653187u;
+        vTapsMaskTable[32]  = 8193u;
+        vTapsMaskTable[33]  = 49155u;
+        vTapsMaskTable[34]  = 5u;
+        vTapsMaskTable[35]  = 2049u;
+        vTapsMaskTable[36]  = 5125u;
+        vTapsMaskTable[37]  = 99u;
+        vTapsMaskTable[38]  = 17u;
+        vTapsMaskTable[39]  = 2621445u;
+        vTapsMaskTable[40]  = 9u;
+        vTapsMaskTable[41]  = 12582915u;
+        vTapsMaskTable[42]  = 99u;
+        vTapsMaskTable[43]  = 201326595u;
+        vTapsMaskTable[44]  = 27u;
+        vTapsMaskTable[45]  = 3145731u;
+        vTapsMaskTable[46]  = 33u;
+        vTapsMaskTable[47]  = 402653187u;
+        vTapsMaskTable[48]  = 513u;
+        vTapsMaskTable[49]  = 201326595u;
+        vTapsMaskTable[50]  = 98307u;
+        vTapsMaskTable[51]  = 9u;
+        vTapsMaskTable[52]  = 98307u;
+        vTapsMaskTable[53]  = 206158430211u;
+        vTapsMaskTable[54]  = 16777217u;
+        vTapsMaskTable[55]  = 6291459u;
+        vTapsMaskTable[56]  = 129u;
+        vTapsMaskTable[57]  = 524289u;
+        vTapsMaskTable[58]  = 6291459u;
+        vTapsMaskTable[59]  = 3u;
+        vTapsMaskTable[60]  = 98307u;
+        vTapsMaskTable[61]  = 216172782113783811u;
+        vTapsMaskTable[62]  = 3u;
+        vTapsMaskTable[63]  = 27u;
+        #endif
+    }
 
-        switch (nBits)
-        {
-            case 1:
-                return;
-            case 2:
-            case 3:
-            case 4:
-            case 6:
-            case 7:
-            case 15:
-            case 22:
-            case 60:
-            case 63:
-                nTapsMask = shift_me | (shift_me << 1);
-                return;
-            case 5:
-            case 11:
-            case 21:
-            case 29:
-            case 35:
-                nTapsMask = shift_me | (shift_me << 2);
-                return;
-            case 8:
-            case 19:
-            case 38:
-            case 43:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 5) | (shift_me << 6);
-                return;
-            case 9:
-            case 39:
-                nTapsMask = shift_me | (shift_me << 4);
-                return;
-            case 10:
-            case 17:
-            case 20:
-            case 25:
-            case 28:
-            case 31:
-            case 41:
-            case 52:
-                nTapsMask = shift_me | (shift_me << 3);
-                return;
-            case 12:
-                nTapsMask = shift_me | (shift_me << 3) | (shift_me << 4) | (shift_me << 7);
-                return;
-            case 13:
-            case 24:
-            case 45:
-            case 64:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 3) | (shift_me << 4);
-                return;
-            case 14:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 11) | (shift_me << 12);
-                return;
-            case 16:
-                nTapsMask = shift_me | (shift_me << 2) | (shift_me << 3) | (shift_me << 5);
-                return;
-            case 18:
-            case 57:
-                nTapsMask = shift_me | (shift_me << 7);
-                return;
-            case 23:
-            case 47:
-                nTapsMask = shift_me | (shift_me << 5);
-                return;
-            case 26:
-            case 27:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 7) | (shift_me << 8);
-                return;
-            case 30:
-            case 51:
-            case 53:
-            case 61:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 15) | (shift_me << 16);
-                return;
-            case 32:
-            case 48:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 27) | (shift_me << 28);
-                return;
-            case 33:
-                nTapsMask = shift_me | (shift_me << 13);
-                return;
-            case 34:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 14) | (shift_me << 15);
-                return;
-            case 36:
-                nTapsMask = shift_me | (shift_me << 11);
-                return;
-            case 37:
-                nTapsMask = shift_me | (shift_me << 2) | (shift_me << 10) | (shift_me << 12);
-                return;
-            case 40:
-                nTapsMask = shift_me | (shift_me << 2) | (shift_me << 19) | (shift_me << 21);
-                return;
-            case 42:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 22) | (shift_me << 23);
-                return;
-            case 44:
-            case 50:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 26) | (shift_me << 27);
-                return;
-            case 46:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 20) | (shift_me << 21);
-                return;
-            case 49:
-                nTapsMask = shift_me | (shift_me << 9);
-                return;
-            case 54:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 36) | (shift_me << 37);
-                return;
-            case 55:
-                nTapsMask = shift_me | (shift_me << 24);
-                return;
-            case 56:
-            case 59:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 21) | (shift_me << 22);
-                return;
-            case 58:
-                nTapsMask = shift_me | (shift_me << 19);
-                return;
-            case 62:
-                nTapsMask = shift_me | (shift_me << 1) | (shift_me << 56) | (shift_me << 57);
-                return;
-        }
+    void MLS::destroy()
+    {
+        if (vTapsMaskTable != NULL)
+            delete [] vTapsMaskTable;
+
+        vTapsMaskTable = NULL;
     }
 
     void MLS::update_settings()
     {
         nMaxBits = lsp_min(nMaxBits, MAX_SUPPORTED_BITS);
 
-        nBits = lsp_max(nBits, 1);
+        nBits = lsp_max(nBits, 1u);
         nBits = lsp_min(nBits, nMaxBits);
 
-        nFeedbackBit = nBits - 1;
+        nFeedbackBit = nBits - 1u;
         nFeedbackMask = mls_t(1) << nFeedbackBit;
 
         // Switch on all the first nBits bits.
         nActiveMask = ~(~mls_t(0) << nBits);
 
-        assign_taps_mask();
+        nTapsMask = vTapsMaskTable[nBits - 1];
 
         nState &= nActiveMask;
 
@@ -260,14 +238,36 @@ namespace lsp
 
     float MLS::single_sample_processor()
     {
-        if (progress())
-            return 1.0f;
-        else
-            return -1.0f;
+        return progress() ? fAmplitude : -fAmplitude;
+    }
+
+    void MLS::process_add(float *dst, const float *src, size_t count)
+    {
+        while (count--)
+        {
+            *(dst++) = *(src++) + single_sample_processor();
+        }
+    }
+
+    void MLS::process_mul(float *dst, const float *src, size_t count)
+    {
+        while (count--)
+        {
+            *(dst++) = *(src++) * single_sample_processor();
+        }
+    }
+
+    void MLS::process_overwrite(float *dst, size_t count)
+    {
+        while (count--)
+        {
+            *(dst++) = single_sample_processor();
+        }
     }
 
     void MLS::dump(IStateDumper *v) const
     {
+        v->write("vTapsMaskTable", vTapsMaskTable);
         v->write("nMaxBits", nMaxBits);
         v->write("nBits", nBits);
         v->write("nFeedbackBit", nFeedbackBit);
@@ -276,6 +276,7 @@ namespace lsp
         v->write("nTapsMask", nTapsMask);
         v->write("nOutputMask", nOutputMask);
         v->write("nState", nState);
+        v->write("fAmplitude", fAmplitude);
         v->write("bSync", bSync);
     }
 }
