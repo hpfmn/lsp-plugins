@@ -21,9 +21,8 @@
 #ifndef CORE_PSEUDORANDOM_MLS_H_
 #define CORE_PSEUDORANDOM_MLS_H_
 
-#define ARCH_32_BIT   (INTPTR_MAX == INT32_MAX)
-
 #include <core/types.h>
+#include <common/types.h>
 #include <core/IStateDumper.h>
 
 namespace lsp
