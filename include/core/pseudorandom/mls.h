@@ -59,7 +59,7 @@ namespace lsp
          */
 
         public:
-            #if ARCH_32_BIT
+            #ifdef ARCH_32_BIT
             typedef uint32_t mls_t;
             #else
             typedef uint64_t mls_t;

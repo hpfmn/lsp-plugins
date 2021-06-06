@@ -65,7 +65,7 @@ namespace lsp
          *  link: https://www.ams.org/journals/mcom/1973-27-124/S0025-5718-1973-0327722-7/S0025-5718-1973-0327722-7.pdf
          */
 
-        #if ARCH_32_BIT
+        #ifdef ARCH_32_BIT
         vTapsMaskTable[0]   = 1u;
         vTapsMaskTable[1]   = 3u;
         vTapsMaskTable[2]   = 3u;
