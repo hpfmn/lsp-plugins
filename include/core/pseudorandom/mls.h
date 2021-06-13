@@ -71,7 +71,6 @@ namespace lsp
         private:
             mls_t      *vTapsMaskTable;
 
-            uint8_t     nMaxSupportedBits; // This is how many bits we can support, i.e. how many we put in the lookup table.
             uint8_t     nMaxBits;
             uint8_t     nBits;
             uint8_t     nFeedbackBit;

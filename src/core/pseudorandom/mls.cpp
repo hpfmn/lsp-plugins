@@ -21,6 +21,13 @@
 
 #include <core/pseudorandom/mls.h>
 
+// This is how many bits we can support, i.e. how many we put in the lookup table.
+#ifdef ARCH_32_BIT
+#define MAX_SUPPORTED_BITS 32
+#else
+#define MAX_SUPPORTED_BITS 64
+#endif
+
 namespace lsp
 {
     MLS::MLS()
@@ -38,11 +45,6 @@ namespace lsp
         vTapsMaskTable  = NULL;
         construct_taps_mask_table();
 
-        #ifdef ARCH_32_BIT
-        nMaxSupportedBits   = 32;
-        #else
-        nMaxSupportedBits   = 64;
-        #endif
         nMaxBits            = sizeof(mls_t) * 8;
         nBits               = sizeof(mls_t) * 8;
         nFeedbackBit        = 0;
@@ -59,7 +61,7 @@ namespace lsp
 
     void MLS::construct_taps_mask_table()
     {
-        vTapsMaskTable = new mls_t[nMaxSupportedBits];
+        vTapsMaskTable = new mls_t[MAX_SUPPORTED_BITS];
 
         /** From the table "Exponent of Terms of Primitive Binary Polynomials"
          *  in Primitive Binary Polynomials by Wayne Stahnke,
@@ -178,7 +180,7 @@ namespace lsp
 
     void MLS::update_settings()
     {
-        nMaxBits = lsp_min(nMaxBits, nMaxSupportedBits);
+        nMaxBits = lsp_min(nMaxBits, MAX_SUPPORTED_BITS);
 
         nBits = lsp_max(nBits, 1u);
         nBits = lsp_min(nBits, nMaxBits);
@@ -270,7 +272,6 @@ namespace lsp
     void MLS::dump(IStateDumper *v) const
     {
         v->write("vTapsMaskTable", vTapsMaskTable);
-        v->write("nMaxSupportedBits", nMaxSupportedBits);
         v->write("nMaxBits", nMaxBits);
         v->write("nBits", nBits);
         v->write("nFeedbackBit", nFeedbackBit);
