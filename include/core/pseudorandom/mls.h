@@ -71,6 +71,7 @@ namespace lsp
         private:
             mls_t      *vTapsMaskTable;
 
+            uint8_t     nMaxSupportedBits; // This is how many bits we can support, i.e. how many we put in the lookup table.
             uint8_t     nMaxBits;
             uint8_t     nBits;
             uint8_t     nFeedbackBit;
@@ -81,6 +82,7 @@ namespace lsp
             mls_t       nState;
 
             float       fAmplitude;
+            float       fOffset;
 
             bool        bSync;
 
@@ -149,6 +151,18 @@ namespace lsp
                     return;
 
                 fAmplitude = amplitude;
+            }
+
+            /** Set the offset of the MLS sequence.
+             *
+             * @param offset offset value for the sequence.
+             */
+            inline void set_offset(float offset)
+            {
+                if (offset == fOffset)
+                    return;
+
+                fOffset = offset;
             }
 
             /** Get the sequence period

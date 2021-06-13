@@ -21,8 +21,6 @@
 
 #include <core/pseudorandom/mls.h>
 
-#define MAX_SUPPORTED_BITS 64
-
 namespace lsp
 {
     MLS::MLS()
@@ -40,24 +38,28 @@ namespace lsp
         vTapsMaskTable  = NULL;
         construct_taps_mask_table();
 
+        #ifdef ARCH_32_BIT
+        nMaxSupportedBits   = 32;
+        #else
+        nMaxSupportedBits   = 64;
+        #endif
+        nMaxBits            = sizeof(mls_t) * 8;
+        nBits               = sizeof(mls_t) * 8;
+        nFeedbackBit        = 0;
+        nFeedbackMask       = 0;
+        nActiveMask         = 0;
+        nTapsMask           = 0;
+        nOutputMask         = 1;
+        nState              = 0;
 
-        nMaxBits        = sizeof(mls_t) * 8;
-        nBits           = sizeof(mls_t) * 8;
-        nFeedbackBit    = 0;
-        nFeedbackMask   = 0;
-        nActiveMask     = 0;
-        nTapsMask       = 0;
-        nOutputMask     = 1;
-        nState          = 0;
+        fAmplitude          = 1.0f;
 
-        fAmplitude      = 1.0f;
-
-        bSync           = true;
+        bSync               = true;
     }
 
     void MLS::construct_taps_mask_table()
     {
-        vTapsMaskTable = new mls_t[MAX_SUPPORTED_BITS];
+        vTapsMaskTable = new mls_t[nMaxSupportedBits];
 
         /** From the table "Exponent of Terms of Primitive Binary Polynomials"
          *  in Primitive Binary Polynomials by Wayne Stahnke,
@@ -176,7 +178,7 @@ namespace lsp
 
     void MLS::update_settings()
     {
-        nMaxBits = lsp_min(nMaxBits, MAX_SUPPORTED_BITS);
+        nMaxBits = lsp_min(nMaxBits, nMaxSupportedBits);
 
         nBits = lsp_max(nBits, 1u);
         nBits = lsp_min(nBits, nMaxBits);
@@ -193,7 +195,7 @@ namespace lsp
 
         // State cannot be 0. If that happens, flip all the active bits to 1.
         if (nState == 0)
-                nState |= nActiveMask;
+            nState |= nActiveMask;
 
         bSync = false;
     }
@@ -238,7 +240,7 @@ namespace lsp
 
     float MLS::single_sample_processor()
     {
-        return progress() ? fAmplitude : -fAmplitude;
+        return progress() ? fAmplitude + fOffset : -fAmplitude + fOffset;
     }
 
     void MLS::process_add(float *dst, const float *src, size_t count)
@@ -268,6 +270,7 @@ namespace lsp
     void MLS::dump(IStateDumper *v) const
     {
         v->write("vTapsMaskTable", vTapsMaskTable);
+        v->write("nMaxSupportedBits", nMaxSupportedBits);
         v->write("nMaxBits", nMaxBits);
         v->write("nBits", nBits);
         v->write("nFeedbackBit", nFeedbackBit);
@@ -277,6 +280,7 @@ namespace lsp
         v->write("nOutputMask", nOutputMask);
         v->write("nState", nState);
         v->write("fAmplitude", fAmplitude);
+        v->write("fOffset", fOffset);
         v->write("bSync", bSync);
     }
 }

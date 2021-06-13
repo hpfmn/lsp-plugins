@@ -19,5 +19,29 @@
  * along with lsp-plugins. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <core/pseudorandom/NoiseGenerator.h>
 
+namespace lsp
+{
 
+    NoiseGenerator::NoiseGenerator()
+    {
+        construct();
+    }
+
+    NoiseGenerator::~NoiseGenerator()
+    {
+        destroy();
+    }
+
+    void NoiseGenerator::construct()
+    {
+
+    }
+
+    void NoiseGenerator::destroy()
+    {
+
+    }
+
+}

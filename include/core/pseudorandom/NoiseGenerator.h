@@ -22,7 +22,7 @@
 #define CORE_PSEUDORANDOM_NOISEGENERATOR_H_
 
 #include <core/pseudorandom/mls.h>
-#include <core/pseudorandom/Randomizer.h>
+#include <core/pseudorandom/lcg.h>
 
 namespace lsp
 {
@@ -32,15 +32,6 @@ namespace lsp
         NG_CORE_LCG,
         NG_CORE_MAX
     };
-
-//    enum ng_lcg_type_t
-//    {
-//        NG_LCG_UNIFORM,
-//        NG_LCG_EXP,
-//        NG_LCG_TRIANGLE,
-//        NG_LCG_GAUSSIAN,
-//        NG_LCG_MAX
-//    };
 
     enum ng_sparsity_t
     {
@@ -94,8 +85,8 @@ namespace lsp
             } velvet_params_t;
 
         private:
-            MLS                 mls;
-            Randomizer          lcg;
+            MLS                 sMLS;
+            LCG                 sLCG;
 
             mls_params_t        sMLSParams;
             lcg_params_t        sLCGParams;

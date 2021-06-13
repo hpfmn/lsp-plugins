@@ -29,10 +29,10 @@ namespace lsp
 {
     enum random_function_t
     {
-        RND_LINEAR,
-        RND_EXP,
-        RND_TRIANGLE,
-        RND_GAUSSIAN,
+        RND_LINEAR,     // Uniform over [0, 1)
+        RND_EXP,        // Decaying exponential over [0, 1]
+        RND_TRIANGLE,   // Triangle over [0, 1]
+        RND_GAUSSIAN,   // Gaussian of mean 0 and standard deviation 1 (has negative values)
         RND_MAX
     };
 
