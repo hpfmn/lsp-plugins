@@ -178,6 +178,11 @@ namespace lsp
         vTapsMaskTable = NULL;
     }
 
+    uint8_t MLS::maximum_number_of_bits()
+    {
+        return MAX_SUPPORTED_BITS;
+    }
+
     void MLS::update_settings()
     {
         nMaxBits = lsp_min(nMaxBits, MAX_SUPPORTED_BITS);

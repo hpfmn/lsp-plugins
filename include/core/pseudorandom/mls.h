@@ -99,6 +99,12 @@ namespace lsp
 
         public:
 
+            /** Return the max supported number of bits by the generator (platform dependent).
+             *
+             * @return maximum number of supported bits.
+             */
+            inline uint8_t maximum_number_of_bits();
+
             /** Check that MLS needs settings update.
              *
              * @return true if MLS needs settings update.

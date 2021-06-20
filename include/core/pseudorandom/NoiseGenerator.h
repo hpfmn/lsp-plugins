@@ -21,6 +21,7 @@
 #ifndef CORE_PSEUDORANDOM_NOISEGENERATOR_H_
 #define CORE_PSEUDORANDOM_NOISEGENERATOR_H_
 
+#include <core/pseudorandom/Randomizer.h>
 #include <core/pseudorandom/mls.h>
 #include <core/pseudorandom/lcg.h>
 
@@ -66,16 +67,24 @@ namespace lsp
     class NoiseGenerator
     {
         protected:
+            typedef struct rand_params_t
+            {
+                uint32_t            nSeed;
+                random_function_t   enFunc;
+            }rand_params_t;
+
             typedef struct mls_params_t
             {
+                bool                bSync;
                 uint8_t             nBits;
                 MLS::mls_t          nSeed;
             } mls_params_t;
 
             typedef struct lcg_params_t
             {
+//                bool                bSync;  // LCG never needs sync.
                 uint32_t            nSeed;
-                random_function_t   enFunction;
+                lcg_dist_t          enDistribution;
             } lcg_params_t;
 
             typedef struct velvet_params_t
@@ -85,9 +94,11 @@ namespace lsp
             } velvet_params_t;
 
         private:
+            Randomizer          sRandomizer;
             MLS                 sMLS;
             LCG                 sLCG;
 
+            rand_params_t       sRandParams;
             mls_params_t        sMLSParams;
             lcg_params_t        sLCGParams;
             velvet_params_t     sVelvetParams;
@@ -95,6 +106,12 @@ namespace lsp
             ng_core_t           enCoreGenerator;
             ng_sparsity_t       enSparsity;
             ng_color_t          enColor;
+
+            float               fAmplitude;
+            float               fOffset;
+
+            uint8_t            *pData;
+            float              *vBuffer;
 
             bool                bSync;
 
@@ -106,9 +123,21 @@ namespace lsp
             void destroy();
 
         protected:
+            void init_buffers();
             void do_process(float *dst, size_t count);
 
         public:
+
+            /** Initialize random generator.
+             *
+             * @param rand_seed seed for the Randomizer generator.
+             * @param lcg_seed seed for the LCG generator.
+             */
+            void init(uint32_t rand_seed, uint32_t lcg_seed);
+
+            /** Initialize random generator, take current time as seed
+             */
+            void init();
 
             /** Check that NoiseGenerator needs settings update.
              *
@@ -125,44 +154,54 @@ namespace lsp
              */
             void update_settings();
 
+            /** Set the number of bits of the MLS sequence generator.
+             *
+             * @param nbits number of bits.
+             */
             inline void set_mls_n_bits(uint8_t nbits)
             {
                 if (nbits == sMLSParams.nBits)
                     return;
 
-                sMLSParams.nBits = nbits;
-                bSync = true;
+                sMLSParams.nBits    = nbits;
+                sMLSParams.bSync    = true;
+                bSync               = true;
             }
 
+            /** Set MLS generator seed.
+             *
+             * @param seed MLS seed.
+             */
             inline void set_mls_seed(MLS::mls_t seed)
             {
                 if (seed == sMLSParams.nSeed)
                     return;
 
-                sMLSParams.nSeed = seed;
+                sMLSParams.nSeed    = seed;
+                sMLSParams.bSync    = true;
+                bSync               = true;
+            }
+
+            /** Set LCG distribution.
+             *
+             * @param dist LCG distribution.
+             */
+            inline void set_lcg_distribution(lcg_dist_t dist)
+            {
+                if ((dist < RND_LINEAR) || (dist >= RND_MAX))
+                    return;
+
+                if (dist == sLCGParams.enDistribution)
+                    return;
+
+                sLCGParams.enDistribution = dist;
                 bSync = true;
             }
 
-            inline void set_lcg_seed(uint32_t seed)
-            {
-                if (seed == sLCGParams.nSeed)
-                    return;
-
-                sLCGParams.nSeed = seed;
-                bSync = true;
-            }
-
-            inline void set_lcg_function(random_function_t func)
-            {
-                if ((func < RND_LINEAR) || (func >= RND_MAX))
-                    return;
-
-                if (func == sLCGParams.enFunction)
-                    return;
-
-                sLCGParams.enFunction = func;
-            }
-
+            /** Set the lcg_dist_telvet noise type. Velvet noise is emitted only if Sparsity is Velvet.
+             *
+             * @param type velvet type.
+             */
             inline void set_velvet_type(ng_velvet_type_t type)
             {
                 if ((type < NG_VELVET_OVN) || (type >= NG_VELVET_MAX))
@@ -174,6 +213,10 @@ namespace lsp
                 sVelvetParams.enVelvetType = type;
             }
 
+            /** Set the Velvet noise window width in samples. Velvet noise is emitted only if Sparsity is Velvet.
+             *
+             * @param width velvet noise width.
+             */
             inline void set_velvet_window_width(float width)
             {
                 if (width == sVelvetParams.fWindowWidth)
@@ -182,6 +225,10 @@ namespace lsp
                 sVelvetParams.fWindowWidth = width;
             }
 
+            /** Set which core generator to use.
+             *
+             * @param core core generator specification.
+             */
             inline void set_core_generator(ng_core_t core)
             {
                 if ((core < NG_CORE_MLS) || (core >= NG_CORE_MAX))
@@ -193,6 +240,10 @@ namespace lsp
                 enCoreGenerator = core;
             }
 
+            /** Set the noise sparsity.
+             *
+             * @param sparsity noise sparsity specification.
+             */
             inline void set_noise_sparsity(ng_sparsity_t sparsity)
             {
                 if ((sparsity < NG_SPARSITY_DENSE) || (sparsity >= NG_SPARSITY_MAX))
@@ -204,6 +255,10 @@ namespace lsp
                 enSparsity = sparsity;
             }
 
+            /** Set the noise color.
+             *
+             * @param noise color specification.
+             */
             inline void set_noise_color(ng_color_t color)
             {
                 if ((color < NG_COLOR_WHITE) || (color >= NG_COLOR_MAX))
@@ -213,6 +268,32 @@ namespace lsp
                     return;
 
                 enColor = color;
+            }
+
+            /** Set the noise amplitude.
+             *
+             * @param amplitude noise amplitude.
+             */
+            inline void set_amplitude(float amplitude)
+            {
+                if (amplitude == fAmplitude)
+                    return;
+
+                fAmplitude = amplitude;
+                bSync = true;
+            }
+
+            /** Set the noise offset.
+             *
+             * @param offset noise offset.
+             */
+            inline void set_offset(float offset)
+            {
+                if (offset == fOffset)
+                    return;
+
+                fOffset = offset;
+                bSync = true;
             }
 
             /** Output wave to the destination buffer in additive mode
