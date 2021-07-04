@@ -124,6 +124,9 @@ namespace lsp
 
         protected:
             void init_buffers();
+            void dense_processor(float *dst, size_t count);
+            void sparse_processor(float *dst, size_t count);
+            void color_processor(float *dst, size_t count);
             void do_process(float *dst, size_t count);
 
         public:
@@ -296,7 +299,7 @@ namespace lsp
                 bSync = true;
             }
 
-            /** Output wave to the destination buffer in additive mode
+            /** Output noise to the destination buffer in additive mode
              *
              * @param dst output wave destination
              * @param src input source, allowed to be NULL

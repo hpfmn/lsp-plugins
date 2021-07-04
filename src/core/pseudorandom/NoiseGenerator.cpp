@@ -43,7 +43,7 @@ namespace lsp
         sRandParams.enFunc          = RND_LINEAR;
 
         sMLSParams.bSync            = true;
-        sMLSParams.nBits            = sMLS.maximum_number_of_bits();
+        sMLSParams.nBits            = 0; // sMLS.maximum_number_of_bits();
         sMLSParams.nSeed            = 0;
 
         sLCGParams.nSeed            = 0;
@@ -133,6 +133,32 @@ namespace lsp
         sLCG.set_offset(fOffset);
 
         bSync = true;
+    }
+
+    void NoiseGenerator::dense_processor(float *dst, size_t count)
+    {
+        switch (enCoreGenerator)
+        {
+            case NG_CORE_MLS:
+            {
+                sMLS.process_overwrite(dst, count);
+            }
+            break;
+
+            case NG_CORE_LCG:
+            {
+                sLCG.process_overwrite(dst, count);
+            }
+            break;
+        }
+    }
+
+    void NoiseGenerator::sparse_processor(float *dst, size_t count)
+    {
+        while (count --)
+        {
+
+        }
     }
 
     void NoiseGenerator::do_process(float *dst, size_t count)

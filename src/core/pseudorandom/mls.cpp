@@ -185,6 +185,9 @@ namespace lsp
 
     void MLS::update_settings()
     {
+        if (!needs_update())
+            return;
+
         nMaxBits = lsp_min(nMaxBits, MAX_SUPPORTED_BITS);
 
         nBits = lsp_max(nBits, 1u);
