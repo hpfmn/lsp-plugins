@@ -280,6 +280,7 @@ namespace lsp
     void MLS::dump(IStateDumper *v) const
     {
         v->write("vTapsMaskTable", vTapsMaskTable);
+
         v->write("nMaxBits", nMaxBits);
         v->write("nBits", nBits);
         v->write("nFeedbackBit", nFeedbackBit);
@@ -288,8 +289,10 @@ namespace lsp
         v->write("nTapsMask", nTapsMask);
         v->write("nOutputMask", nOutputMask);
         v->write("nState", nState);
+
         v->write("fAmplitude", fAmplitude);
         v->write("fOffset", fOffset);
+
         v->write("bSync", bSync);
     }
 }

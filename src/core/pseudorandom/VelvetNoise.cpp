@@ -92,6 +92,10 @@ namespace lsp
     {
         sRandomizer.init(randseed);
 
+        // Ensure that the MLS sequence has unit amplitude and 0 DC bias.
+        sMLS.set_amplitude(1.0f);
+        sMLS.set_offset(0.0f);
+
         sMLS.set_n_bits(mlsnbits);
         sMLS.set_state(mlsseed);
         sMLS.update_settings();
@@ -103,21 +107,14 @@ namespace lsp
     {
         sRandomizer.init();
 
+        // Ensure that the MLS sequence has unit amplitude and 0 DC bias.
+        sMLS.set_amplitude(1.0f);
+        sMLS.set_offset(0.0f);
+
         // Simply use defaults in the class.
         sMLS.update_settings();
 
         init_buffers();
-    }
-
-    void VelvetNoise::update_settings()
-    {
-        if (!needs_update())
-            return;
-
-        sMLS.set_amplitude(fAmplitude);
-        sMLS.set_offset(fOffset);
-
-        sMLS.update_settings();
     }
 
     float VelvetNoise::get_random_value()
@@ -130,37 +127,21 @@ namespace lsp
         switch (enCore)
         {
             case VN_CORE_MLS:
-                return sMLS.single_sample_processor();
+                return sMLS.single_sample_processor(); // Either 1 or -1
             default:
             case VN_CORE_LCG:
-                return fAmplitude * 2.0f * roundf(get_random_value()) - 1.0f + fOffset;
+                return 2.0f * roundf(get_random_value()) - 1.0f; // Either 1 or -1
         }
     }
 
     float VelvetNoise::get_crushed_spike()
     {
-        switch (enCore)
-        {
-            // Needs improvement
-            case VN_CORE_MLS:
-            {
-                if (get_random_value() > sCrushParams.fCrushProb)
-                    return sMLS.single_sample_processor();
-                else
-                    return 0.0f;
-            }
+        float spike = 0.0f;
 
-            default:
-            case VN_CORE_LCG:
-            {
-                float spike = 0.0f;
+        if (get_random_value() > sCrushParams.fCrushProb)
+            spike = 1.0f;
 
-                if (spike > sCrushParams.fCrushProb)
-                    spike = 1.0f;
-
-                return fAmplitude * 2.0f * spike - 1.0f + fOffset;
-            }
-        }
+        return 2.0f * spike - 1.0f; // Either 1 or -1
     }
 
     void VelvetNoise::do_process(float *dst, size_t count)
@@ -184,9 +165,9 @@ namespace lsp
                         dst[idx] = get_crushed_spike();
                     else
                         dst[idx] = get_spike();
-                }
 
-                ++scan;
+                    ++scan;
+                }
             }
             break;
 
@@ -205,9 +186,9 @@ namespace lsp
                         dst[idx] = get_crushed_spike();
                     else
                         dst[idx] = get_spike();
-                }
 
-                ++scan;
+                    ++scan;
+                }
             }
             break;
 
@@ -216,7 +197,6 @@ namespace lsp
                 dsp::fill_zero(dst, count);
 
                 size_t idx = 0;
-                size_t scan = 0;
 
                 while (idx < count)
                 {
@@ -227,8 +207,6 @@ namespace lsp
                     else
                         dst[idx] = get_spike();
                 }
-
-                ++scan;
             }
             break;
 
@@ -238,19 +216,18 @@ namespace lsp
                 {
                     float value = roundf(fWindowWidth * (get_random_value() - 0.5f) / (fWindowWidth - 1.0f));
 
-                    // Needs Improvement
                     if (sCrushParams.bCrush)
                     {
-                        float multiplier = 0.0f;
+                        float multiplier = 1.0f;
 
                         if (get_random_value() > sCrushParams.fCrushProb)
-                            multiplier = 1.0f;
+                            multiplier = -1.0f;
 
-                        *(dst++) = fAmplitude * multiplier * abs(value) - fOffset;
+                        *(dst++) = multiplier * abs(value);
                     }
                     else
                     {
-                        *(dst++) = fAmplitude * value - fOffset;
+                        *(dst++) = value;
                     }
                 }
             }
@@ -277,6 +254,8 @@ namespace lsp
             size_t to_do = (count > BUF_LIM_SIZE) ? BUF_LIM_SIZE : count;
 
             do_process(vBuffer, to_do);
+            dsp::mul_k2(vBuffer, fAmplitude, to_do);
+            dsp::add_k2(vBuffer, fOffset, to_do);
             dsp::add2(dst, vBuffer, to_do);
 
             dst     += to_do;
@@ -296,6 +275,8 @@ namespace lsp
             size_t to_do = (count > BUF_LIM_SIZE) ? BUF_LIM_SIZE : count;
 
             do_process(vBuffer, to_do);
+            dsp::mul_k2(vBuffer, fAmplitude, to_do);
+            dsp::add_k2(vBuffer, fOffset, to_do);
             dsp::mul2(dst, vBuffer, to_do);
 
             dst     += to_do;
@@ -310,10 +291,38 @@ namespace lsp
             size_t to_do = (count > BUF_LIM_SIZE) ? BUF_LIM_SIZE : count;
 
             do_process(vBuffer, to_do);
+            dsp::mul_k2(vBuffer, fAmplitude, to_do);
+            dsp::add_k2(vBuffer, fOffset, to_do);
             dsp::copy(dst, vBuffer, to_do);
 
             dst     += to_do;
             count   -= to_do;
         }
+    }
+
+    void VelvetNoise::dump(IStateDumper *v) const
+    {
+        v->write_object("sRandomizer", &sRandomizer);
+
+        v->write_object("sMLS", &sMLS);
+
+        v->write("enCore", enCore);
+
+        v->write("enVelvetType", enVelvetType);
+
+        v->begin_object("sCrushParams", &sCrushParams, sizeof(sCrushParams));
+        {
+            v->write("bCrush", sCrushParams.bCrush);
+            v->write("fCrushProb", sCrushParams.fCrushProb);
+        }
+        v->end_object();
+
+        v->write("fWindowWidth", fWindowWidth);
+        v->write("fARNdelta", fARNdelta);
+        v->write("fAmplitude", fAmplitude);
+        v->write("fOffset", fOffset);
+
+        v->write("pData", pData);
+        v->write("vBuffer", vBuffer);
     }
 }

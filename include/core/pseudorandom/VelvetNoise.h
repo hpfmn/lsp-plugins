@@ -18,6 +18,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with lsp-plugins. If not, see <https://www.gnu.org/licenses/>.
  */
+
+/** As in GENERALIZATIONS OF VELVET NOISE AND THEIR USE IN 1-BIT MUSIC by Kurt James Werner
+ * Link: https://dafx2019.bcu.ac.uk/papers/DAFx2019_paper_53.pdf
+ * Archive: https://web.archive.org/web/20210711144324/https://dafx2019.bcu.ac.uk/papers/DAFx2019_paper_53.pdf
+ *
+ * Modified to use MLS samples for OVN, OVNA and ARN (not crushed).
+ */
+
 #ifndef CORE_PSEUDORANDOM_VELVETNOISE_H_
 #define CORE_PSEUDORANDOM_VELVETNOISE_H_
 
@@ -28,7 +36,7 @@ namespace lsp
 {
     enum vn_core_t
     {
-        VN_CORE_MLS,
+        VN_CORE_MLS, // Only compatible with OVN, OVNA and ARN (not crushed)
         VN_CORE_LCG,
         VN_CORE_MAX
     };
@@ -44,12 +52,15 @@ namespace lsp
 
     class VelvetNoise
     {
-    protected:
-        typedef struct crush_t
-        {
-            bool    bCrush;
-            float   fCrushProb;
-        } crush_t;
+        protected:
+            typedef struct crush_t
+            {
+                bool    bCrush;
+                float   fCrushProb;
+            } crush_t;
+
+        private:
+            VelvetNoise & operator = (const VelvetNoise &);
 
         private:
             Randomizer          sRandomizer;
@@ -69,8 +80,6 @@ namespace lsp
 
             uint8_t            *pData;
             float              *vBuffer;
-
-            bool                bSync;
 
         public:
             explicit VelvetNoise();
@@ -112,15 +121,6 @@ namespace lsp
              * Time as seed for randomizer, Max size and max seed for the MLS.
              */
             void init();
-
-            /** Check that MLS needs settings update.
-             *
-             * @return true if MLS needs settings update.
-             */
-            inline bool needs_update() const
-            {
-                return bSync;
-            }
 
             /** This method should be called if needs_update() returns true.
              * before calling processing methods.
@@ -192,7 +192,6 @@ namespace lsp
                     return;
 
                 fAmplitude  = amplitude;
-                bSync       = true;
             }
 
             /** Set the velvet noise offset.
@@ -205,7 +204,6 @@ namespace lsp
                     return;
 
                 fOffset = offset;
-                bSync   = true;
             }
 
             /** Set whether to produce crushed noise.

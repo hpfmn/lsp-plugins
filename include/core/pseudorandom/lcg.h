@@ -37,8 +37,13 @@ namespace lsp
     class LCG
     {
         private:
+        LCG & operator = (const LCG &);
+
+        private:
             Randomizer  sRand;
+
             lcg_dist_t  enDistribution;
+
             float       fAmplitude;
             float       fOffset;
 

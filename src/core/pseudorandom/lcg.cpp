@@ -115,7 +115,9 @@ namespace lsp
     void LCG::dump(IStateDumper *v) const
     {
         v->write_object("sRand", &sRand);
+
         v->write("enDistribution", enDistribution);
+
         v->write("fAmplitude", fAmplitude);
         v->write("fOffset", fOffset);
     }
