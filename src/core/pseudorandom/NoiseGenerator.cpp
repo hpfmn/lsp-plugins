@@ -39,33 +39,36 @@ namespace lsp
 
     void NoiseGenerator::construct()
     {
-        sRandParams.nSeed           =0;
-        sRandParams.enFunc          = RND_LINEAR;
+        sMLSParams.nBits                = 0;
+        sMLSParams.nSeed                = 0;
 
-        sMLSParams.bSync            = true;
-        sMLSParams.nBits            = 0; // sMLS.maximum_number_of_bits();
-        sMLSParams.nSeed            = 0;
+        sLCGParams.nSeed                = 0;
+        sLCGParams.enDistribution       = LCG_UNIFORM;
 
-        sLCGParams.nSeed            = 0;
-        sLCGParams.enDistribution   = LCG_UNIFORM;
+        sVelvetParams.nRandSeed         = 0;
+        sVelvetParams.nMLSnBits         = 0;
+        sVelvetParams.nMLSseed          = 0;
+        sVelvetParams.enCore            = VN_CORE_LCG;
+        sVelvetParams.enVelvetType      = VN_VELVET_OVN;
+        sVelvetParams.fWindowWidth_s    = 0.1f;
+        sVelvetParams.fARNdelta         = 0.5f;
+        sVelvetParams.bCrush            = false;
+        sVelvetParams.fCrushProb        = 0.5f;
 
-        sVelvetParams.enVelvetType  = NG_VELVET_OVN;
-        sVelvetParams.fWindowWidth  = 0.1f;
+        enGenerator                     = NG_GEN_LCG;
+        enColor                         = NG_COLOR_WHITE;
 
-        enCoreGenerator             = NG_CORE_MLS;
-        enSparsity                  = NG_SPARSITY_DENSE;
-        enColor                     = NG_COLOR_WHITE;
+        pData                           = NULL;
+        vBuffer                         = NULL;
 
-        pData                       = NULL;
-        vBuffer                     = NULL;
-
-        bSync                       = true;
+        bSync                           = true;
     }
 
     void NoiseGenerator::destroy()
     {
         sMLS.destroy();
         sLCG.destroy();
+        sVelvetNoise.destroy();
 
         free_aligned(pData);
         pData = NULL;
@@ -94,58 +97,85 @@ namespace lsp
         lsp_assert(ptr <= &save[samples]);
     }
 
-    void NoiseGenerator::init(uint32_t rand_seed, uint32_t lcg_seed)
+    void NoiseGenerator::init(
+            uint8_t mls_n_bits, MLS::mls_t mls_seed,
+            uint32_t lcg_seed,
+            uint32_t velvet_rand_seed, uint8_t velvet_mls_n_bits, MLS::mls_t velvet_mls_seed
+            )
     {
-        sRandParams.nSeed = rand_seed;
-        sRandomizer.init(sRandParams.nSeed);
+        sMLSParams.nBits = mls_n_bits;
+        sMLSParams.nSeed = mls_seed;
 
         sLCGParams.nSeed = lcg_seed;
         sLCG.init(sLCGParams.nSeed);
 
-        init_buffers();
-    }
-
-    void NoiseGenerator::init()
-    {
-        sRandomizer.init();
-        sLCG.init();
+        sVelvetParams.nRandSeed = velvet_rand_seed;
+        sVelvetParams.nMLSnBits = velvet_mls_n_bits;
+        sVelvetParams.nMLSseed = velvet_mls_seed;
+        sVelvetNoise.init(sVelvetParams.nRandSeed, sVelvetParams.nMLSnBits, sVelvetParams.nMLSseed);
 
         init_buffers();
-    }
-
-    void NoiseGenerator::update_settings()
-    {
-        if (sMLSParams.bSync)
-        {
-            sMLS.set_n_bits(sMLSParams.nBits);
-            sMLS.set_state(sMLSParams.nSeed);
-
-            sMLS.update_settings();
-
-            sMLSParams.bSync = false;
-        }
-        // These can be updated anytime, no need to call update_settings after.
-        sMLS.set_amplitude(fAmplitude);
-        sMLS.set_offset(fOffset);
-
-        sLCG.set_distribution(sLCGParams.enDistribution);
-        sLCG.set_amplitude(fAmplitude);
-        sLCG.set_offset(fOffset);
 
         bSync = true;
     }
 
-    void NoiseGenerator::dense_processor(float *dst, size_t count)
+    void NoiseGenerator::init()
     {
-        switch (enCoreGenerator)
+        sMLSParams.nBits = sMLS.maximum_number_of_bits(); // By default, maximise so that period is maximal.
+        sMLSParams.nSeed = 0; // This forces default seed.
+
+        sLCG.init();
+        sVelvetNoise.init();
+
+        init_buffers();
+
+        bSync = true;
+    }
+
+    void NoiseGenerator::update_settings()
+    {
+        sMLS.set_n_bits(sMLSParams.nBits);
+        sMLS.set_state(sMLSParams.nSeed);
+        sMLS.set_amplitude(fAmplitude);
+        sMLS.set_offset(fOffset);
+        sMLS.update_settings();
+
+        sLCG.set_distribution(sLCGParams.enDistribution);
+        sLCG.set_amplitude(fAmplitude);
+        sLCG.set_offset(fOffset);
+        // sLCG has no update_settings method.
+
+        sVelvetNoise.set_core_type(sVelvetParams.enCore);
+        sVelvetNoise.set_velvet_type(sVelvetParams.enVelvetType);
+        sVelvetNoise.set_velvet_window_width(seconds_to_samples(nSampleRate, sVelvetParams.fWindowWidth_s));
+        sVelvetNoise.set_delta_value(sVelvetParams.fARNdelta);
+        sVelvetNoise.set_amplitude(fAmplitude);
+        sVelvetNoise.set_offset(fOffset);
+        sVelvetNoise.set_crush(sVelvetParams.bCrush);
+        sVelvetNoise.set_crush_probability(sVelvetParams.fCrushProb);
+        // sVelvetNoise has no update_settings method.
+
+        bSync = true;
+    }
+
+    void NoiseGenerator::do_process(float *dst, size_t count)
+    {
+        switch (enGenerator)
         {
-            case NG_CORE_MLS:
+            case NG_GEN_MLS:
             {
                 sMLS.process_overwrite(dst, count);
             }
             break;
 
-            case NG_CORE_LCG:
+            case NG_GEN_VELVET:
+            {
+                sVelvetNoise.process_overwrite(dst, count);
+            }
+            break;
+
+            default:
+            case NG_GEN_LCG:
             {
                 sLCG.process_overwrite(dst, count);
             }
@@ -153,16 +183,52 @@ namespace lsp
         }
     }
 
-    void NoiseGenerator::sparse_processor(float *dst, size_t count)
+    void NoiseGenerator::dump(IStateDumper *v) const
     {
-        while (count --)
+        v->write("nSampleRate", nSampleRate);
+
+        v->write_object("sMLS", &sMLS);
+        v->write_object("sLCG", &sLCG);
+        v->write_object("sVelvetNoise", &sVelvetNoise);
+
+        v->begin_object("sMLSParams", &sMLSParams, sizeof(sMLSParams));
         {
-
+            v->write("nBits", sMLSParams.nBits);
+            v->write("nSeed", sMLSParams.nSeed);
         }
-    }
+        v->end_object();
 
-    void NoiseGenerator::do_process(float *dst, size_t count)
-    {
+        v->begin_object("sLCGParams", &sLCGParams, sizeof(sLCGParams));
+        {
+            v->write("nSeed", sLCGParams.nSeed);
+            v->write("enDistribution", sLCGParams.enDistribution);
+        }
+        v->end_object();
 
+        v->begin_object("sVelvetParams", &sVelvetParams, sizeof(sVelvetParams));
+        {
+            v->write("nRandSeed", sVelvetParams.nRandSeed);
+            v->write("nMLSnBits", sVelvetParams.nMLSnBits);
+            v->write("nMLSseed", sVelvetParams.nMLSseed);
+            v->write("enCore", sVelvetParams.enCore);
+            v->write("enVelvetType", sVelvetParams.enVelvetType);
+            v->write("fWindowWidth_s", sVelvetParams.fWindowWidth_s);
+            v->write("fARNdelta", sVelvetParams.fARNdelta);
+            v->write("bCrush", sVelvetParams.bCrush);
+            v->write("fCrushProb", sVelvetParams.fCrushProb);
+        }
+        v->end_object();
+
+        v->write("enGenerator", enGenerator);
+
+        v->write("enColor", enColor);
+
+        v->write("fAmplitude", fAmplitude);
+        v->write("fOffset", fOffset);
+
+        v->write("pData", pData);
+        v->write("vBuffer", vBuffer);
+
+        v->write("bSync", bSync);
     }
 }

@@ -103,7 +103,7 @@ namespace lsp
              *
              * @return maximum number of supported bits.
              */
-            inline uint8_t maximum_number_of_bits();
+            uint8_t maximum_number_of_bits();
 
             /** Check that MLS needs settings update.
              *

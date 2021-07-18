@@ -122,12 +122,6 @@ namespace lsp
              */
             void init();
 
-            /** This method should be called if needs_update() returns true.
-             * before calling processing methods.
-             *
-             */
-            void update_settings();
-
             /** Set the core generator for velvet noise.
              *
              * @param core generator for the random sequence.

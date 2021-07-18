@@ -21,39 +21,18 @@
 #ifndef CORE_PSEUDORANDOM_NOISEGENERATOR_H_
 #define CORE_PSEUDORANDOM_NOISEGENERATOR_H_
 
-#include <core/pseudorandom/Randomizer.h>
 #include <core/pseudorandom/mls.h>
 #include <core/pseudorandom/lcg.h>
+#include <core/pseudorandom/VelvetNoise.h>
 
 namespace lsp
 {
-    enum ng_core_t
+    enum ng_generator_t
     {
-        NG_CORE_MLS,
-        NG_CORE_LCG,
-        NG_CORE_MAX
-    };
-
-    enum ng_sparsity_t
-    {
-        NG_SPARSITY_DENSE,
-        NG_SPARSITY_VELVET,
-        NG_SPARSITY_MAX
-    };
-
-    /** As in GENERALIZATIONS OF VELVET NOISE AND THEIR USE IN 1-BIT MUSIC by Kurt James Werner
-     * Link: https://dafx2019.bcu.ac.uk/papers/DAFx2019_paper_53.pdf
-     */
-
-    enum ng_velvet_type_t
-    {
-        NG_VELVET_OVN,
-        NG_VELVET_ARN,
-        NG_VELVET_TRN,
-        NG_VELVET_COVN,
-        NG_VELVET_CARN,
-        NG_VELVET_CTRN,
-        NG_VELVET_MAX
+        NG_GEN_MLS,
+        NG_GEN_LCG,
+        NG_GEN_VELVET,
+        NG_GEN_MAX
     };
 
     enum ng_color_t
@@ -67,44 +46,44 @@ namespace lsp
     class NoiseGenerator
     {
         protected:
-            typedef struct rand_params_t
-            {
-                uint32_t            nSeed;
-                random_function_t   enFunc;
-            }rand_params_t;
 
             typedef struct mls_params_t
             {
-                bool                bSync;
                 uint8_t             nBits;
                 MLS::mls_t          nSeed;
             } mls_params_t;
 
             typedef struct lcg_params_t
             {
-//                bool                bSync;  // LCG never needs sync.
                 uint32_t            nSeed;
                 lcg_dist_t          enDistribution;
             } lcg_params_t;
 
             typedef struct velvet_params_t
             {
-                ng_velvet_type_t    enVelvetType;
-                float               fWindowWidth;
+                uint32_t            nRandSeed;
+                uint8_t             nMLSnBits;
+                MLS::mls_t          nMLSseed;
+                vn_core_t           enCore;
+                vn_velvet_type_t    enVelvetType;
+                float               fWindowWidth_s;
+                float               fARNdelta;
+                bool                bCrush;
+                float               fCrushProb;
             } velvet_params_t;
 
         private:
-            Randomizer          sRandomizer;
+            size_t              nSampleRate;
+
             MLS                 sMLS;
             LCG                 sLCG;
+            VelvetNoise         sVelvetNoise;
 
-            rand_params_t       sRandParams;
             mls_params_t        sMLSParams;
             lcg_params_t        sLCGParams;
             velvet_params_t     sVelvetParams;
 
-            ng_core_t           enCoreGenerator;
-            ng_sparsity_t       enSparsity;
+            ng_generator_t      enGenerator;
             ng_color_t          enColor;
 
             float               fAmplitude;
@@ -124,9 +103,6 @@ namespace lsp
 
         protected:
             void init_buffers();
-            void dense_processor(float *dst, size_t count);
-            void sparse_processor(float *dst, size_t count);
-            void color_processor(float *dst, size_t count);
             void do_process(float *dst, size_t count);
 
         public:
@@ -136,9 +112,13 @@ namespace lsp
              * @param rand_seed seed for the Randomizer generator.
              * @param lcg_seed seed for the LCG generator.
              */
-            void init(uint32_t rand_seed, uint32_t lcg_seed);
+            void init(
+                    uint8_t mls_n_bits, MLS::mls_t mls_seed,
+                    uint32_t lcg_seed,
+                    uint32_t velvet_rand_seed, uint8_t velvet_mls_n_bits, MLS::mls_t velvet_mls_seed
+                    );
 
-            /** Initialize random generator, take current time as seed
+            /** Initialize random generator, automatic.
              */
             void init();
 
@@ -157,6 +137,19 @@ namespace lsp
              */
             void update_settings();
 
+            /** Set sample rate
+             *
+             * @param sr sample rate
+             */
+            inline void set_sample_rate(size_t sr)
+            {
+                if (nSampleRate == sr)
+                    return;
+
+                nSampleRate = sr;
+                bSync       = true;
+            }
+
             /** Set the number of bits of the MLS sequence generator.
              *
              * @param nbits number of bits.
@@ -167,7 +160,6 @@ namespace lsp
                     return;
 
                 sMLSParams.nBits    = nbits;
-                sMLSParams.bSync    = true;
                 bSync               = true;
             }
 
@@ -181,7 +173,6 @@ namespace lsp
                     return;
 
                 sMLSParams.nSeed    = seed;
-                sMLSParams.bSync    = true;
                 bSync               = true;
             }
 
@@ -191,9 +182,6 @@ namespace lsp
              */
             inline void set_lcg_distribution(lcg_dist_t dist)
             {
-                if ((dist < RND_LINEAR) || (dist >= RND_MAX))
-                    return;
-
                 if (dist == sLCGParams.enDistribution)
                     return;
 
@@ -205,11 +193,8 @@ namespace lsp
              *
              * @param type velvet type.
              */
-            inline void set_velvet_type(ng_velvet_type_t type)
+            inline void set_velvet_type(vn_velvet_type_t type)
             {
-                if ((type < NG_VELVET_OVN) || (type >= NG_VELVET_MAX))
-                    return;
-
                 if (type == sVelvetParams.enVelvetType)
                     return;
 
@@ -222,40 +207,61 @@ namespace lsp
              */
             inline void set_velvet_window_width(float width)
             {
-                if (width == sVelvetParams.fWindowWidth)
+                if (width == sVelvetParams.fWindowWidth_s)
                     return;
 
-                sVelvetParams.fWindowWidth = width;
+                sVelvetParams.fWindowWidth_s = width;
+            }
+
+            /** Set delta parameter for Velvet ARN noise.
+             *
+             * @param delta value.
+             */
+            inline void set_velvet_arn_delta(float delta)
+            {
+                if (delta == sVelvetParams.fARNdelta)
+                    return;
+
+                sVelvetParams.fARNdelta = delta;
+            }
+
+            /** Set whether to crush the velvet generator.
+             *
+             * @param true to crash.
+             */
+            inline void set_velvet_crush(bool crush)
+            {
+                if (crush == sVelvetParams.bCrush)
+                    return;
+
+                sVelvetParams.bCrush = crush;
+            }
+
+            /** Set the crushing probability for the velvet generator.
+             *
+             * @param crushing probability.
+             */
+            inline void set_velvet_crushing_probability(float prob)
+            {
+                if (prob == sVelvetParams.fCrushProb)
+                    return;
+
+                sVelvetParams.fCrushProb = prob;
             }
 
             /** Set which core generator to use.
              *
              * @param core core generator specification.
              */
-            inline void set_core_generator(ng_core_t core)
+            inline void set_generator(ng_generator_t core)
             {
-                if ((core < NG_CORE_MLS) || (core >= NG_CORE_MAX))
+                if ((core < NG_GEN_MLS) || (core >= NG_GEN_MAX))
                     return;
 
-                if (core == enCoreGenerator)
+                if (core == enGenerator)
                     return;
 
-                enCoreGenerator = core;
-            }
-
-            /** Set the noise sparsity.
-             *
-             * @param sparsity noise sparsity specification.
-             */
-            inline void set_noise_sparsity(ng_sparsity_t sparsity)
-            {
-                if ((sparsity < NG_SPARSITY_DENSE) || (sparsity >= NG_SPARSITY_MAX))
-                    return;
-
-                if (sparsity == enSparsity)
-                    return;
-
-                enSparsity = sparsity;
+                enGenerator = core;
             }
 
             /** Set the noise color.
