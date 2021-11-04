@@ -100,6 +100,14 @@ namespace lsp
     {
     }
 
+    void IStateDumper::write(unsigned long value)
+    {
+    }
+
+    void IStateDumper::write(long value)
+    {
+    }
+
     void IStateDumper::write(float value)
     {
     }
@@ -145,6 +153,14 @@ namespace lsp
     }
 
     void IStateDumper::write(const char *name, uint64_t value)
+    {
+    }
+
+    void IStateDumper::write(const char *name, unsigned long value)
+    {
+    }
+
+    void IStateDumper::write(const char *name, long value)
     {
     }
 

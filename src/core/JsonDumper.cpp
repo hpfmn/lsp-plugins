@@ -200,6 +200,11 @@ namespace lsp
         sOut.write_int(value);
     }
 
+    void JsonDumper::write(unsigned long value)
+    {
+        sOut.write_int(value);
+    }
+
     void JsonDumper::write(int64_t value)
     {
         sOut.write_int(value);
@@ -276,6 +281,12 @@ namespace lsp
     }
 
     void JsonDumper::write(const char *name, int64_t value)
+    {
+        sOut.write_property(name);
+        write(value);
+    }
+
+    void JsonDumper::write(const char *name, unsigned long value)
     {
         sOut.write_property(name);
         write(value);

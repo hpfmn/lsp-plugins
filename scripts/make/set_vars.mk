@@ -30,6 +30,9 @@ ifndef BUILD_PLATFORM
   ifeq ($(findstring SunOS,$(BUILD_SYSTEM)),SunOS)
     BUILD_PLATFORM          = Solaris
   endif
+  ifeq ($(findstring Darwin,$(BUILD_SYSTEM)),Darwin)
+    BUILD_PLATFORM          = BSD
+  endif
 endif
 
 export BUILD_SYSTEM

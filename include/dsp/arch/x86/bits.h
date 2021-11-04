@@ -914,6 +914,21 @@ inline int32_t __lsp_forced_inline    reverse_bits(int32_t v, size_t count)
         return int(v);
     }
 
+    inline int __lsp_forced_inline     int_log2(unsigned long v)
+    {
+        uint64_t tmp;
+
+        ARCH_X86_ASM (
+            __ASM_EMIT("xor     %[tmp], %[tmp]")
+            __ASM_EMIT("bsr     %[res], %[res]")
+            __ASM_EMIT("cmovz   %[tmp], %[res]")
+            : [res] "+r" (v), [tmp] "=&r" (tmp)
+            :
+            : "cc"
+        );
+        return int(v);
+    }
+
     inline int __lsp_forced_inline     int_log2(int64_t v)
     {
         uint64_t tmp;

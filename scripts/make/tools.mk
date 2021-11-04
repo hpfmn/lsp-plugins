@@ -5,13 +5,14 @@ TOOL_CXX                = g++
 TOOL_PHP                = php
 
 # Setup preferred flags
-FLAG_RELRO              = -Wl,-z,relro,-z,now
+#FLAG_RELRO              = -Wl,-z,relro,-z,now
+LAG_RELRO              = 
 FLAG_VERSION            = -DLSP_MAIN_VERSION=\"$(LSP_VERSION)\" -DLSP_INSTALL_PREFIX=\"$(PREFIX)\"
 FLAG_CTUNE              = -std=c++98 \
                           -fno-exceptions -fno-rtti \
                           -fdata-sections -ffunction-sections -fno-asynchronous-unwind-tables \
-                          -fvisibility=hidden \
                           -pipe -Wall
+                          #-fvisibility=hidden \
 
 # Patch flags and tools
 ifeq ($(BUILD_PLATFORM),Solaris)
@@ -28,10 +29,11 @@ LD                       ?= $(TOOL_LD)
 MAKE_OPTS                 = -s
 CFLAGS                   += $(CC_ARCH) $(FLAG_CTUNE) $(CC_FLAGS) $(FLAG_VERSION)
 CXXFLAGS                 += $(CC_ARCH) $(FLAG_CTUNE) $(CC_FLAGS) $(FLAG_VERSION)
-SO_FLAGS                  = $(CC_ARCH) $(FLAG_RELRO) -Wl,--gc-sections -shared -Llibrary -lc -fPIC
+SO_FLAGS                  = $(CC_ARCH) $(FLAG_RELRO) -Wl,-r,-dylib -shared -Llibrary -lc -fPIC
 MERGE_FLAGS               = $(LD_ARCH) -r
 EXE_TEST_FLAGS            = $(LDFLAGS) $(CC_ARCH)
-EXE_FLAGS                 = $(LDFLAGS) $(CC_ARCH) $(FLAG_RELRO) -Wl,--gc-sections
+#EXE_FLAGS                 = $(LDFLAGS) $(CC_ARCH) $(FLAG_RELRO) -Wl,--gc-sections
+EXE_FLAGS                 = $(LDFLAGS) $(CC_ARCH) $(FLAG_RELRO)
 
 ifeq ($(BUILD_PLATFORM), Linux)
   SO_FLAGS                 += -Wl,--no-undefined

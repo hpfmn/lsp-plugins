@@ -143,7 +143,7 @@ namespace lsp
                         {
                             case 0: return true;
                             case EBUSY:
-                                #ifdef PLATFORM_SOLARIS
+                                #if defined PLATFORM_SOLARIS || defined __APPLE__
                                     sched_yield();
                                 #else
                                     pthread_yield();

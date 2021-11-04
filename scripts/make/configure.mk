@@ -78,10 +78,11 @@ ifeq ($(BUILD_PROFILE),x86_64)
   ifeq ($(BUILD_PLATFORM), Linux)
     LD_ARCH          = -m elf_x86_64
   endif
-  ifeq ($(BUILD_PLATFORM), BSD)
-    LD_ARCH          = -m elf_x86_64_fbsd
-  endif
+  #ifeq ($(BUILD_PLATFORM), BSD)
+  #  LD_ARCH          = -m elf_x86_64_fbsd
+  #endif
 endif
+LD_ARCH = -arch x86_64
 
 ifeq ($(BUILD_PLATFORM), BSD)
   INCLUDE          += -I/usr/local/include
@@ -141,6 +142,7 @@ else
   export SNDFILE_LIBS     = $(shell pkg-config --libs sndfile)
   export JACK_HEADERS     = $(shell pkg-config --cflags jack)
   export JACK_LIBS        = $(shell pkg-config --libs jack)
+  export LV2_HEADERS     = $(shell pkg-config --cflags lv2)
   export OPENGL_HEADERS   = $(shell pkg-config --cflags gl 2>/dev/null || echo "")
   export OPENGL_LIBS      = $(shell pkg-config --libs gl 2>/dev/null || echo "")
 endif

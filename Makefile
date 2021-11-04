@@ -1,4 +1,7 @@
 # Common definitions
+export CC = /usr/local/bin/gcc-11
+export CXX = /usr/local/bin/g++-11
+export LD = /usr/bin/ld
 RELEASE_TEXT            = LICENSE.txt README.txt CHANGELOG.txt
 RELEASE_SRC             = $(RELEASE_TEXT) src build-*.sh include res Makefile release.sh
 RELEASE_SCRIPTS         = scripts/bash scripts/make
@@ -51,11 +54,11 @@ export OBJ_METADATA     = $(OBJDIR)/metadata.o
 export OBJ_FILES        = $(OBJ_CORE) $(OBJ_UI_CORE) $(OBJ_RES_CORE) $(OBJ_PLUGINS) $(OBJ_METADATA)
 
 # Libraries
-export LIB_LADSPA       = $(OBJDIR)/$(ARTIFACT_ID)-ladspa.so
-export LIB_LV2          = $(OBJDIR)/$(ARTIFACT_ID)-lv2.so
-export LIB_VST          = $(OBJDIR)/$(ARTIFACT_ID)-vst-core-$(LSP_VERSION).so
-export LIB_JACK         = $(OBJDIR)/$(ARTIFACT_ID)-jack-core-$(LSP_VERSION).so
-export LIB_R3D_GLX      = $(OBJDIR)/$(R3D_ARTIFACT_ID)-glx.so
+export LIB_LADSPA       = $(OBJDIR)/$(ARTIFACT_ID)-ladspa.dylib
+export LIB_LV2          = $(OBJDIR)/$(ARTIFACT_ID)-lv2.dylib
+export LIB_VST          = $(OBJDIR)/$(ARTIFACT_ID)-vst-core-$(LSP_VERSION).dylib
+export LIB_JACK         = $(OBJDIR)/$(ARTIFACT_ID)-jack-core-$(LSP_VERSION).dylib
+export LIB_R3D_GLX      = $(OBJDIR)/$(R3D_ARTIFACT_ID)-glx.dylib
 
 # Binaries
 export BIN_PROFILE      = $(OBJDIR)/$(ARTIFACT_ID)-profile
@@ -72,7 +75,7 @@ export UTL_FILES        = $(UTL_GENTTL) $(UTL_VSTMAKE) $(UTL_GENPHP) $(UTL_RESGE
 # Files
 export PHP_PLUGINS      = $(OBJDIR)/plugins.php
 
-FILE                    = $(@:$(OBJDIR)/%.o=%.cpp)
+FILE                    = $(@:$(OBJDIR)/%.a=%.cpp)
 FILES                   =
 
 LADSPA_ID              := $(ARTIFACT_ID)-ladspa-$(LSP_VERSION)
@@ -168,10 +171,10 @@ compile_info:
 compile: | compile_info
 	@mkdir -p $(OBJDIR)/src
 	@mkdir -p $(CFGDIR)
-	@test -f "$(CFGDIR)/$(PREFIX_FILE)" || echo -n "$(PREFIX)" > "$(CFGDIR)/$(PREFIX_FILE)"
-	@test -f "$(CFGDIR)/$(MODULES_FILE)" || echo -n "$(BUILD_MODULES)" > "$(CFGDIR)/$(MODULES_FILE)"
-	@test -f "$(CFGDIR)/$(BUILD_PROFILE)" || echo -n "$(BUILD_PROFILE)" > "$(CFGDIR)/$(BUILD_PROFILE_FILE)"
-	@test -f "$(CFGDIR)/$(R3D_BACKENDS_FILE)" || echo -n "$(BUILD_R3D_BACKENDS)" > "$(CFGDIR)/$(R3D_BACKENDS_FILE)"
+	@test -f "$(CFGDIR)/$(PREFIX_FILE)" || echo "$(PREFIX)" > "$(CFGDIR)/$(PREFIX_FILE)"
+	@test -f "$(CFGDIR)/$(MODULES_FILE)" || echo "$(BUILD_MODULES)" > "$(CFGDIR)/$(MODULES_FILE)"
+	@test -f "$(CFGDIR)/$(BUILD_PROFILE)" || echo "$(BUILD_PROFILE)" > "$(CFGDIR)/$(BUILD_PROFILE_FILE)"
+	@test -f "$(CFGDIR)/$(R3D_BACKENDS_FILE)" || echo "$(BUILD_R3D_BACKENDS)" > "$(CFGDIR)/$(R3D_BACKENDS_FILE)"
 	@$(MAKE) $(MAKE_OPTS) -C src all OBJDIR=$(OBJDIR)/src
 	@echo "Build OK"
 	

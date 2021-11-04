@@ -87,14 +87,14 @@
     #endif /* VST_64BIT_PLATFORM */
 #endif /* __GNUC__ */
 
-#if TARGET_API_MAC_CARBON
-    #ifdef (__LP64__) || (__ppc64__)
-        #pragma options align=power
-    #else
-        #pragma options align=mac68k
-    #endif
-    #define VSTCALLBACK
-#elif defined __BORLANDC__
+//#if TARGET_API_MAC_CARBON
+//    #ifdef (__LP64__) || (__ppc64__)
+//        #pragma options align=power
+//    #else
+//        #pragma options align=mac68k
+//    #endif
+//    #define VSTCALLBACK
+#if defined __BORLANDC__
     #pragma -a8
 #elif defined(__GNUC__)
     #pragma pack(push, 8)
@@ -3859,9 +3859,9 @@ VST_C_EXTERN typedef AEffect*  (*VstPluginMainProc)(audioMasterCallback audioMas
 //-------------------------------------------------------------------------------------------------------
 // Restore compilation options
 //-------------------------------------------------------------------------------------------------------
-#if TARGET_API_MAC_CARBON
-    #pragma options align=reset
-#elif defined(WIN32) || defined(__FLAT__) || defined(__GNUC__)
+//#if TARGET_API_MAC_CARBON
+//    #pragma options align=reset
+#if defined(WIN32) || defined(__FLAT__) || defined(__GNUC__)
     #pragma pack(pop)
 #elif defined __BORLANDC__
     #pragma -a-

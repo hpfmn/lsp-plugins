@@ -133,6 +133,8 @@ ATOMIC_ADD_DEF(uint32_t, volatile)
     ATOMIC_ADD_DEF(int64_t, volatile)
     ATOMIC_ADD_DEF(uint64_t, )
     ATOMIC_ADD_DEF(uint64_t, volatile)
+    ATOMIC_ADD_DEF(unsigned long, )
+    ATOMIC_ADD_DEF(unsigned long, volatile)
 #endif /* ARCH_X86_64 */
 
 #undef ATOMIC_ADD_DEF

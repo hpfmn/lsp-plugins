@@ -7,9 +7,9 @@ OBJ_LIBS                = $(PTHREAD_LIBS) $(MATH_LIBS)
 OBJ_EXTRA               =
 INCLUDE_EXTRA           =
 
-ifeq ($(BUILD_PLATFORM),BSD)
-  OBJ_LIBS               += $(ICONV_LIBS)
-endif
+#ifeq ($(BUILD_PLATFORM),BSD)
+OBJ_LIBS               += $(ICONV_LIBS)
+#endif
 
 ifeq ($(LSP_TESTING),1)
   OBJ_EXTRA              += $(OBJ_TEST_CORE)
@@ -37,15 +37,17 @@ FILES                   = $(addprefix $(OBJDIR)/, $(FILELIST))
 
 .PHONY: all target files subdirs $(SUBDIRS)
 
+ALL_LIBS = $(OBJDIR)/../dsp/dsp.o $(OBJDIR)/../dsp/x86.o $(OBJDIR)/../dsp/avx2.o $(OBJDIR)/../dsp/sse4.o $(OBJDIR)/../dsp/avx.o $(OBJDIR)/../dsp/bits.o $(OBJDIR)/../dsp/sse.o $(OBJDIR)/../dsp/sse2.o $(OBJDIR)/../dsp/sse3.o $(OBJDIR)/../dsp/native.o
+
 all: $(MODULES)
 
 target: all
 
 # Common rules
 $(SUBDIRS):
-	@echo "Building $@"
-	@mkdir -p $(OBJDIR)/$(@)
-	@$(MAKE) $(MAKE_OPTS) -C $@ $(MAKECMDGOALS) OBJDIR=$(OBJDIR)/$(@)
+	echo "Building $@"
+	mkdir -p $(OBJDIR)/$(@)
+	$(MAKE) $(MAKE_OPTS) -C $@ $(MAKECMDGOALS) OBJDIR=$(OBJDIR)/$(@)
 
 $(FILES):
 	@echo "  $(CXX) $(FILE)"
@@ -53,23 +55,22 @@ $(FILES):
 
 # Rules for each utility
 $(UTL_GENTTL): $(FILES) $(SUBDIRS)
-	@echo "  $(CXX) $(notdir $(UTL_GENTTL))"
-	@$(CXX) -o $(UTL_GENTTL) $(OBJDIR)/lv2_genttl.o $(OBJ_FILES) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS) $(LV2_LIBS)
+	echo "  $(CXX) $(notdir $(UTL_GENTTL))"
+	$(CXX) -o $(UTL_GENTTL) $(OBJDIR)/lv2_genttl.o $(OBJ_FILES) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS) $(LV2_LIBS) $(ALL_LIBS)
 	
 $(UTL_JACKMAKE): $(FILES) $(SUBDIRS)
-	@echo "  $(CXX) $(notdir $(UTL_JACKMAKE))"
-	@$(CXX) -o $(UTL_JACKMAKE) $(OBJDIR)/jack_genmake.o $(OBJ_FILES) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS)
+	echo "  $(CXX) $(notdir $(UTL_JACKMAKE))"
+	$(CXX) -o $(UTL_JACKMAKE) $(OBJDIR)/jack_genmake.o $(OBJ_FILES) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS) $(ALL_LIBS)
 	
 $(UTL_VSTMAKE): $(FILES) $(SUBDIRS)
-	@echo "  $(CXX) $(notdir $(UTL_VSTMAKE))"
-	@$(CXX) -o $(UTL_VSTMAKE) $(OBJDIR)/vst_genmake.o $(OBJ_FILES) $(EXE_FLAGS) $(DL_LIBS) $(OBJ_LIBS)
+	echo "  $(CXX) $(notdir $(UTL_VSTMAKE))"
+	$(CXX) -o $(UTL_VSTMAKE) $(OBJDIR)/vst_genmake.o $(OBJ_FILES) $(EXE_FLAGS) $(DL_LIBS) $(OBJ_LIBS) $(ALL_LIBS) -L/usr/local/Cellar/libsndfile/1.0.31/lib -lsndfile
 	
 $(UTL_GENPHP): $(FILES) $(SUBDIRS)
-	@echo "  $(CXX) $(notdir $(UTL_GENPHP))"
-	@$(CXX) -o $(UTL_GENPHP) $(OBJDIR)/gen_php.o $(OBJ_FILES) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS)
+	echo "  $(CXX) $(notdir $(UTL_GENPHP))"
+	$(CXX) -o $(UTL_GENPHP) $(OBJDIR)/gen_php.o $(OBJ_FILES) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS) $(ALL_LIBS)
 	
 $(UTL_RESGEN): $(FILES) $(SUBDIRS)
-	@echo "  $(CXX) $(notdir $(UTL_RESGEN))"
-	@$(CXX) -o $(UTL_RESGEN) $(OBJDIR)/resource_gen.o $(OBJ_FILES) $(OBJ_DSP) $(OBJ_EXTRA) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS)
+	echo "  $(CXX) $(notdir $(UTL_RESGEN))"
+	$(CXX) -demangle -o $(UTL_RESGEN) $(OBJDIR)/resource_gen.o $(OBJ_FILES) $(OBJ_DSP) $(OBJ_EXTRA) $(EXE_FLAGS) $(SNDFILE_LIBS) $(DL_LIBS) $(OBJ_LIBS) # $(ALL_LIBS)
 
-	

@@ -60,6 +60,8 @@ namespace lsp
             virtual void write(int64_t value);
             virtual void write(float value);
             virtual void write(double value);
+            virtual void write(unsigned long value);
+            virtual void write(long value);
 
             virtual void write(const char *name, const void *value);
             virtual void write(const char *name, const char *value);
@@ -74,6 +76,8 @@ namespace lsp
             virtual void write(const char *name, int64_t value);
             virtual void write(const char *name, float value);
             virtual void write(const char *name, double value);
+            virtual void write(const char *name, unsigned long value);
+            virtual void write(const char *name, long value);
 
             virtual void writev(const void * const *value, size_t count);
             virtual void writev(const bool *value, size_t count);
